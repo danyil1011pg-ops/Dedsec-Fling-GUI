@@ -1,39 +1,505 @@
-local function showOverlayText(message, duration)
-    local overlay = Instance.new("ScreenGui")
-    overlay.Name = "Overlay"
-    overlay.Parent = game:GetService("CoreGui")
-    overlay.ResetOnSpawn = true
+-- D3DSEC_VORTEX.lua
+-- SWILL MODE | Use at your own risk
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- ========== WARNING SYSTEM ==========
+local function showWarning()
+    local warningGui = Instance.new("ScreenGui")
+    warningGui.Name = "WarningScreen"
+    warningGui.ResetOnSpawn = false
+    warningGui.Parent = game:GetService("CoreGui")
+    warningGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0.7
+    frame.Size = UDim2.new(0, 500, 0, 250)
+    frame.Position = UDim2.new(0.5, -250, 0.5, -125)
+    frame.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
+    frame.BackgroundTransparency = 0.05
     frame.BorderSizePixel = 0
-    frame.Parent = overlay
-    local text = Instance.new("TextLabel")
-    text.Size = UDim2.new(1, 0, 1, 0)
-    text.BackgroundTransparency = 1
-    text.Text = message
-    text.TextColor3 = Color3.fromRGB(255, 50, 50)
-    text.Font = Enum.Font.GothamBlack
-    text.TextSize = 30
-    text.TextWrapped = true
-    text.TextScaled = true
-    text.Parent = frame
-    local text2 = Instance.new("TextLabel")
-    text2.Size = UDim2.new(1, 0, 0.3, 0)
-    text2.Position = UDim2.new(0, 0, 0.7, 0)
-    text2.BackgroundTransparency = 1
-    text2.Text = "BETA VERSION\nNo responsibility for misuse\nUse at your own risk"
-    text2.TextColor3 = Color3.fromRGB(255, 200, 0)
-    text2.Font = Enum.Font.Gotham
-    text2.TextSize = 18
-    text2.TextWrapped = true
-    text2.TextScaled = false
-    text2.Parent = frame
-    task.wait(duration)
-    overlay:Destroy()
+    frame.Parent = warningGui
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
+    Instance.new("UIStroke", frame).Color = Color3.fromRGB(255, 50, 50)
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 40)
+    title.Position = UDim2.new(0, 0, 0, 10)
+    title.BackgroundTransparency = 1
+    title.Text = "⚠️ WARNING ⚠️"
+    title.TextColor3 = Color3.fromRGB(255, 80, 80)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 24
+    title.Parent = frame
+
+    local message = Instance.new("TextLabel")
+    message.Size = UDim2.new(1, -40, 0, 100)
+    message.Position = UDim2.new(0, 20, 0, 60)
+    message.BackgroundTransparency = 1
+    message.Text = "This tool modifies game behavior.\nUsing it may result in a permanent BAN.\n\nYou are solely responsible for your account.\n\nProceed at your own risk."
+    message.TextColor3 = Color3.fromRGB(220, 220, 220)
+    message.Font = Enum.Font.Gotham
+    message.TextSize = 14
+    message.TextWrapped = true
+    message.Parent = frame
+
+    local acceptBtn = Instance.new("TextButton")
+    acceptBtn.Size = UDim2.new(0, 150, 0, 40)
+    acceptBtn.Position = UDim2.new(0.5, -160, 1, -60)
+    acceptBtn.BackgroundColor3 = Color3.fromRGB(0, 140, 0)
+    acceptBtn.Text = "I UNDERSTAND"
+    acceptBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    acceptBtn.Font = Enum.Font.GothamBold
+    acceptBtn.TextSize = 14
+    acceptBtn.Parent = frame
+    Instance.new("UICorner", acceptBtn).CornerRadius = UDim.new(0, 8)
+
+    local cancelBtn = Instance.new("TextButton")
+    cancelBtn.Size = UDim2.new(0, 150, 0, 40)
+    cancelBtn.Position = UDim2.new(0.5, 10, 1, -60)
+    cancelBtn.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
+    cancelBtn.Text = "EXIT"
+    cancelBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    cancelBtn.Font = Enum.Font.GothamBold
+    cancelBtn.TextSize = 14
+    cancelBtn.Parent = frame
+    Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 8)
+
+    local accepted = false
+    acceptBtn.MouseButton1Click:Connect(function()
+        accepted = true
+        warningGui:Destroy()
+    end)
+    cancelBtn.MouseButton1Click:Connect(function()
+        warningGui:Destroy()
+    end)
+
+    repeat task.wait() until accepted
 end
 
-showOverlayText("⚡ BETA v1.0 ⚡\nEducational purposes only\nUse at your own risk", 5)
+-- ========== DRAG + RESIZE SYSTEM ==========
+local function makeWindowDraggableAndResizable(frame, titleBar, resizeHandle)
+    local drag = false
+    local dragStart, startPos
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            drag = true
+            dragStart = input.Position
+            startPos = frame.Position
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if drag and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            drag = false
+        end
+    end)
+    if resizeHandle then
+        local resizing = false
+        local resizeStart, startSize
+        resizeHandle.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                resizing = true
+                resizeStart = input.Position
+                startSize = frame.Size
+            end
+        end)
+        UIS.InputChanged:Connect(function(input)
+            if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local delta = input.Position - resizeStart
+                local newWidth = math.clamp(startSize.X.Offset + delta.X, 380, 700)
+                local newHeight = math.clamp(startSize.Y.Offset + delta.Y, 450, 700)
+                frame.Size = UDim2.new(0, newWidth, 0, newHeight)
+            end
+        end)
+        UIS.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                resizing = false
+            end
+        end)
+    end
+end
 
-local IlIlIllIIlIIlIIIl = game:GetService("Players") local IlllIIllIIlIlIlIl = game:GetService("RunService") local IIIlllIIllIIlIIII = game:GetService("UserInputService") local lllllllllllllIIII = IlIlIllIIlIIlIIIl.LocalPlayer local IlIIIIIlllllIlIIl = Instance.new("ScreenGui") IlIIIIIlllllIlIIl.Name = "ControlPanel" IlIIIIIlllllIlIIl.ResetOnSpawn = false IlIIIIIlllllIlIIl.Parent = game:GetService("CoreGui") local lllIIlIlIlIIlIIII = Instance.new("Frame") lllIIlIlIlIIlIIII.Size = UDim2.new(0, 420, 0, 600) lllIIlIlIlIIlIIII.Position = UDim2.new(0.5, -210, 0.5, -300) lllIIlIlIlIIlIIII.BackgroundColor3 = Color3.fromRGB(8, 12, 24) lllIIlIlIlIIlIIII.BackgroundTransparency = 0.08 lllIIlIlIlIIlIIII.BorderSizePixel = 0 lllIIlIlIlIIlIIII.ClipsDescendants = true lllIIlIlIlIIlIIII.Parent = IlIIIIIlllllIlIIl Instance.new("UICorner", lllIIlIlIlIIlIIII).CornerRadius = UDim.new(0, 14) Instance.new("UIStroke", lllIIlIlIlIIlIIII).Color = Color3.fromRGB(0, 200, 255) Instance.new("UIStroke", lllIIlIlIlIIlIIII).Thickness = 2 Instance.new("UIStroke", lllIIlIlIlIIlIIII).Transparency = 0.5 local lIlIllIIllIIlIlII = Instance.new("Frame") lIlIllIIllIIlIlII.Size = UDim2.new(1, 0, 1, 0) lIlIllIIllIIlIlII.BackgroundColor3 = Color3.fromRGB(0, 0, 0) lIlIllIIllIIlIlII.BackgroundTransparency = 0.65 lIlIllIIllIIlIlII.Parent = lllIIlIlIlIIlIIII local IIllIIlIIlIIlIlII = {"D3DS3C", "Ph4ntom", "datastealer_404", "JOIN US", "OVERRIDE", "SYSTEM", "ACCESS", "BREACH"} local IIlIllIlIlIIlIIII = {} for IIlIlIlIIlIlIIlII = 1, 60 do local IllIlIIlIlIlIIIIl = Instance.new("TextLabel") IllIlIIlIlIlIIIIl.Size = UDim2.new(0, math.random(30, 80), 0, 20) IllIlIIlIlIlIIIIl.Position = UDim2.new(math.random() * 0.95, 0, math.random() * 0.95, 0) IllIlIIlIlIlIIIIl.Text = math.random(1, 3) == 1 and IIllIIlIIlIIlIlII[math.random(1, #IIllIIlIIlIIlIlII)] or (math.random(0, 1) == 0 and "0" or "1") IllIlIIlIlIlIIIIl.TextColor3 = Color3.fromRGB(0, math.random(150, 255), math.random(100, 200)) IllIlIIlIlIlIIIIl.BackgroundTransparency = 1 IllIlIIlIlIlIIIIl.Font = Enum.Font.Code IllIlIIlIlIlIIIIl.TextSize = math.random(10, 16) IllIlIIlIlIlIIIIl.TextTransparency = math.random(3, 7) / 10 IllIlIIlIlIlIIIIl.Parent = lIlIllIIllIIlIlII table.insert(IIlIllIlIlIIlIIII, IllIlIIlIlIlIIIIl) end spawn(function() while IlIIIIIlllllIlIIl and IlIIIIIlllllIlIIl.Parent do for _, IIIllllIIIIllIlII in pairs(IIlIllIlIlIIlIIII) do local IIIllIIllIIlIlIII = IIIllllIIIIllIlII.Position.X.Scale + (math.random() - 0.5) * 0.02 local IIIllIIllIIlIlIIl = IIIllllIIIIllIlII.Position.Y.Scale + (math.random() - 0.5) * 0.02 IIIllIIllIIlIlIII = math.clamp(IIIllIIllIIlIlIII, 0, 0.95) IIIllIIllIIlIlIIl = math.clamp(IIIllIIllIIlIlIIl, 0, 0.95) IIIllllIIIIllIlII.Position = UDim2.new(IIIllIIllIIlIlIII, 0, IIIllIIllIIlIlIIl, 0) if math.random(1, 100) == 1 then IIIllllIIIIllIlII.Text = IIllIIlIIlIIlIlII[math.random(1, #IIllIIlIIlIIlIlII)] IIIllllIIIIllIlII.TextColor3 = Color3.fromRGB(0, math.random(200, 255), math.random(150, 255)) elseif math.random(1, 20) == 1 then IIIllllIIIIllIlII.Text = math.random(0, 1) == 0 and "0" or "1" end IIIllllIIIIllIlII.TextTransparency = math.random(3, 8) / 10 end task.wait(2) end end) local IIIllllllIIllIIIl = Instance.new("Frame") IIIllllllIIllIIIl.Size = UDim2.new(1, 0, 0, 40) IIIllllllIIllIIIl.BackgroundColor3 = Color3.fromRGB(12, 16, 28) IIIllllllIIllIIIl.BackgroundTransparency = 0.3 IIIllllllIIllIIIl.BorderSizePixel = 0 IIIllllllIIllIIIl.Parent = lllIIlIlIlIIlIIII IIIllllllIIllIIIl.Active = true Instance.new("UICorner", IIIllllllIIllIIIl).CornerRadius = UDim.new(0, 14) local IIIlIllIlIIllIlII = Instance.new("TextLabel") IIIlIllIlIIllIlII.Size = UDim2.new(0, 40, 1, 0) IIIlIllIlIIllIlII.BackgroundTransparency = 1 IIIlIllIlIIllIlII.Text = "⚡" IIIlIllIlIIllIlII.TextColor3 = Color3.fromRGB(0, 200, 255) IIIlIllIlIIllIlII.Font = Enum.Font.GothamBold IIIlIllIlIIllIlII.TextSize = 24 IIIlIllIlIIllIlII.Parent = IIIllllllIIllIIIl local IIIIIllllIlIllIlI = Instance.new("TextLabel") IIIIIllllIlIllIlI.Size = UDim2.new(1, -80, 1, 0) IIIIIllllIlIllIlI.Position = UDim2.new(0, 45, 0, 0) IIIIIllllIlIllIlI.BackgroundTransparency = 1 IIIIIllllIlIllIlI.Text = "◈ D3DS3C ◈ PH4NTOM ◈" IIIIIllllIlIllIlI.TextColor3 = Color3.fromRGB(0, 200, 255) IIIIIllllIlIllIlI.Font = Enum.Font.GothamBold IIIIIllllIlIllIlI.TextSize = 16 IIIIIllllIlIllIlI.Parent = IIIllllllIIllIIIl local IIIlllIllllIllllI = Instance.new("TextButton") IIIlllIllllIllllI.Size = UDim2.new(0, 30, 0, 30) IIIlllIllllIllllI.Position = UDim2.new(1, -38, 0, 5) IIIlllIllllIllllI.BackgroundColor3 = Color3.fromRGB(180, 30, 30) IIIlllIllllIllllI.Text = "✕" IIIlllIllllIllllI.TextColor3 = Color3.fromRGB(255, 255, 255) IIIlllIllllIllllI.Font = Enum.Font.GothamBold IIIlllIllllIllllI.TextSize = 16 IIIlllIllllIllllI.Parent = IIIllllllIIllIIIl Instance.new("UICorner", IIIlllIllllIllllI).CornerRadius = UDim.new(0, 6) IIIlllIllllIllllI.MouseButton1Click:Connect(function() IlIIIIIlllllIlIIl:Destroy() end) local IIIlIlIIlllIIlIII = Instance.new("Frame") IIIlIlIIlllIIlIII.Size = UDim2.new(0, 15, 0, 15) IIIlIlIIlllIIlIII.Position = UDim2.new(1, -15, 1, -15) IIIlIlIIlllIIlIII.BackgroundColor3 = Color3.fromRGB(0, 200, 255) IIIlIlIIlllIIlIII.BackgroundTransparency = 0.5 IIIlIlIIlllIIlIII.Parent = lllIIlIlIlIIlIIII Instance.new("UICorner", IIIlIlIIlllIIlIII).CornerRadius = UDim.new(0, 3) local IlIIIlIlllllllIll = Instance.new("TextLabel") IlIIIlIlllllllIll.Position = UDim2.new(0, 15, 0, 50) IlIIIlIlllllllIll.Size = UDim2.new(1, -30, 0, 22) IlIIIlIlllllllIll.BackgroundTransparency = 1 IlIIIlIlllllllIll.Text = "STANDBY | TARGETS: 0" IlIIIlIlllllllIll.TextColor3 = Color3.fromRGB(150, 200, 150) IlIIIlIlllllllIll.Font = Enum.Font.Gotham IlIIIlIlllllllIll.TextSize = 12 IlIIIlIlllllllIll.TextXAlignment = Enum.TextXAlignment.Left IlIIIlIlllllllIll.Parent = lllIIlIlIlIIlIIII local lIIllIIlllIIIIlII = Instance.new("Frame") lIIllIIlllIIIIlII.Position = UDim2.new(0, 10, 0, 80) lIIllIIlllIIIIlII.Size = UDim2.new(1, -20, 0, 200) lIIllIIlllIIIIlII.BackgroundColor3 = Color3.fromRGB(15, 19, 30) lIIllIIlllIIIIlII.BackgroundTransparency = 0.4 lIIllIIlllIIIIlII.BorderSizePixel = 0 lIIllIIlllIIIIlII.Parent = lllIIlIlIlIIlIIII Instance.new("UICorner", lIIllIIlllIIIIlII).CornerRadius = UDim.new(0, 8) local lIIlIlllIllIIlIlI = Instance.new("ScrollingFrame") lIIlIlllIllIIlIlI.Position = UDim2.new(0, 5, 0, 5) lIIlIlllIllIIlIlI.Size = UDim2.new(1, -10, 1, -10) lIIlIlllIllIIlIlI.BackgroundTransparency = 1 lIIlIlllIllIIlIlI.BorderSizePixel = 0 lIIlIlllIllIIlIlI.ScrollBarThickness = 5 lIIlIlllIllIIlIlI.CanvasSize = UDim2.new(0, 0, 0, 0) lIIlIlllIllIIlIlI.Parent = lIIllIIlllIIIIlII local IIIlllllIIllIlIIl = Instance.new("TextButton") IIIlllllIIllIlIIl.Position = UDim2.new(0, 10, 0, 295) IIIlllllIIllIlIIl.Size = UDim2.new(0.48, -5, 0, 36) IIIlllllIIllIlIIl.BackgroundColor3 = Color3.fromRGB(0, 140, 0) IIIlllllIIllIlIIl.BackgroundTransparency = 0.2 IIIlllllIIllIlIIl.Text = "▶ ENGAGE" IIIlllllIIllIlIIl.TextColor3 = Color3.fromRGB(255, 255, 255) IIIlllllIIllIlIIl.Font = Enum.Font.GothamBold IIIlllllIIllIlIIl.TextSize = 14 IIIlllllIIllIlIIl.Parent = lllIIlIlIlIIlIIII Instance.new("UICorner", IIIlllllIIllIlIIl).CornerRadius = UDim.new(0, 8) local IIlIlllIlIIlIlIIl = Instance.new("TextButton") IIlIlllIlIIlIlIIl.Position = UDim2.new(0.52, 5, 0, 295) IIlIlllIlIIlIlIIl.Size = UDim2.new(0.48, -5, 0, 36) IIlIlllIlIIlIlIIl.BackgroundColor3 = Color3.fromRGB(140, 0, 0) IIlIlllIlIIlIlIIl.BackgroundTransparency = 0.2 IIlIlllIlIIlIlIIl.Text = "■ DISENGAGE" IIlIlllIlIIlIlIIl.TextColor3 = Color3.fromRGB(255, 255, 255) IIlIlllIlIIlIlIIl.Font = Enum.Font.GothamBold IIlIlllIlIIlIlIIl.TextSize = 14 IIlIlllIlIIlIlIIl.Parent = lllIIlIlIlIIlIIII Instance.new("UICorner", IIlIlllIlIIlIlIIl).CornerRadius = UDim.new(0, 8) local IIIlllllllIIllIlI = Instance.new("TextButton") IIIlllllllIIllIlI.Position = UDim2.new(0, 10, 0, 340) IIIlllllllIIllIlI.Size = UDim2.new(0.48, -5, 0, 28) IIIlllllllIIllIlI.BackgroundColor3 = Color3.fromRGB(40, 40, 60) IIIlllllllIIllIlI.Text = "SELECT ALL" IIIlllllllIIllIlI.TextColor3 = Color3.fromRGB(220, 220, 220) IIIlllllllIIllIlI.Font = Enum.Font.Gotham IIIlllllllIIllIlI.TextSize = 11 IIIlllllllIIllIlI.Parent = lllIIlIlIlIIlIIII Instance.new("UICorner", IIIlllllllIIllIlI).CornerRadius = UDim.new(0, 6) local lIIIlllIlllllllII = Instance.new("TextButton") lIIIlllIlllllllII.Position = UDim2.new(0.52, 5, 0, 340) lIIIlllIlllllllII.Size = UDim2.new(0.48, -5, 0, 28) lIIIlllIlllllllII.BackgroundColor3 = Color3.fromRGB(40, 40, 60) lIIIlllIlllllllII.Text = "DESELECT ALL" lIIIlllIlllllllII.TextColor3 = Color3.fromRGB(220, 220, 220) lIIIlllIlllllllII.Font = Enum.Font.Gotham lIIIlllIlllllllII.TextSize = 11 lIIIlllIlllllllII.Parent = lllIIlIlIlIIlIIII Instance.new("UICorner", lIIIlllIlllllllII).CornerRadius = UDim.new(0, 6) local lIIlIIIllIIlIllIl = Instance.new("TextButton") lIIlIIIllIIlIllIl.Position = UDim2.new(0, 10, 0, 378) lIIlIIIllIIlIllIl.Size = UDim2.new(0.48, -5, 0, 36) lIIlIIIllIIlIllIl.BackgroundColor3 = Color3.fromRGB(100, 50, 80) lIIlIIIllIIlIllIl.BackgroundTransparency = 0.2 lIIlIIIllIIlIllIl.Text = "🛡️ ANTI-FLING" lIIlIIIllIIlIllIl.TextColor3 = Color3.fromRGB(255, 255, 255) lIIlIIIllIIlIllIl.Font = Enum.Font.GothamBold lIIlIIIllIIlIllIl.TextSize = 13 lIIlIIIllIIlIllIl.Parent = lllIIlIlIlIIlIIII Instance.new("UICorner", lIIlIIIllIIlIllIl).CornerRadius = UDim.new(0, 8) local lIIllIlllIlIIlIlI = Instance.new("TextButton") lIIllIlllIlIIlIlI.Position = UDim2.new(0.52, 5, 0, 378) lIIllIlllIlIIlIlI.Size = UDim2.new(0.48, -5, 0, 36) lIIllIlllIlIIlIlI.BackgroundColor3 = Color3.fromRGB(80, 40, 120) lIIllIlllIlIIlIlI.BackgroundTransparency = 0.2 lIIllIlllIlIIlIlI.Text = "⚙️ STEALTH" lIIllIlllIlIIlIlI.TextColor3 = Color3.fromRGB(255, 255, 255) lIIllIlllIlIIlIlI.Font = Enum.Font.GothamBold lIIllIlllIlIIlIlI.TextSize = 13 lIIllIlllIlIIlIlI.Parent = lllIIlIlIlIIlIIII Instance.new("UICorner", lIIllIlllIlIIlIlI).CornerRadius = UDim.new(0, 8) local lIlllIlllIlllIllI = Instance.new("Frame") lIlllIlllIlllIllI.Position = UDim2.new(0, 10, 0, 425) lIlllIlllIlllIllI.Size = UDim2.new(1, -20, 0, 42) lIlllIlllIlllIllI.BackgroundColor3 = Color3.fromRGB(80, 40, 40) lIlllIlllIlllIllI.BackgroundTransparency = 0.6 lIlllIlllIlllIllI.Parent = lllIIlIlIlIIlIIII Instance.new("UICorner", lIlllIlllIlllIllI).CornerRadius = UDim.new(0, 6) local IlIllIlllIllIlllI = Instance.new("TextLabel") IlIllIlllIllIlllI.Size = UDim2.new(1, 0, 1, 0) IlIllIlllIllIlllI.BackgroundTransparency = 1 IlIllIlllIllIlllI.Text = "⚠️ BETA VERSION - USE AT YOUR OWN RISK ⚠️" IlIllIlllIllIlllI.TextColor3 = Color3.fromRGB(255, 150, 100) IlIllIlllIllIlllI.Font = Enum.Font.GothamBold IlIllIlllIllIlllI.TextSize = 11 IlIllIlllIllIlllI.Parent = lIlllIlllIlllIllI local IlIlllllIlllIlllI = nil local IIIlllIlllIlIllll = {} local IlIlIlIllllIllll = nil local IIIlIlllIlllIlIIl = false local Illllllllllllllll = {} local IlllllllllllllllI = {} local IlIlIlIlllIIlIlIl = false local function lIlIlIlllIlllIlIl() for _, lIlllllIllllllIll in pairs(IlIlIllIIlIIlIIIl:GetPlayers()) do if lIlllllIllllllIll ~= lllllllllllllIIII then local IlIlllllIlllllIll = lIlllllIllllllIll.Character if IlIlllllIlllllIll then for _, IIllIllllllIllllI in pairs(IlIlllllIlllllIll:GetDescendants()) do if IIllIllllllIllllI:IsA("BasePart") then IIllIllllllIllllI.CanCollide = not IIIlllIlllIlIllll[lIlllllIllllllIll.Name] end end end end end end local function IIllIlllllIlIlIll(lIllIIlllllIIIIlI, lIIlIllIlllIllIll, IlIIllllIllIIlIlI) local IIlIlIllIllllIll = false local IlIIIllIIlIlIIlIl, lIIlIIlIlIllIlll lIIlIllIlllIllIll.InputBegan:Connect(function(IlIllllIlIlllIlIl) if IlIllllIlIlllIlIl.UserInputType == Enum.UserInputType.MouseButton1 then IIlIlIllIllllIll = true IlIIIllIIlIlIIlIl = IlIllllIlIlllIlIl.Position lIIlIIlIlIllIlll = lIllIIlllllIIIIlI.Position end end) IIIlllIIllIIlIIII.InputChanged:Connect(function(IlIlIIlIlIlIlIlI) if IIlIlIllIllllIll and IlIlIIlIlIlIlIlI.UserInputType == Enum.UserInputType.MouseMovement then local IlIlllllIIlIllIlI = IlIlIIlIlIlIlIlI.Position - IlIIIllIIlIlIIlIl lIllIIlllllIIIIlI.Position = UDim2.new(lIIlIIlIlIllIlll.X.Scale, lIIlIIlIlIllIlll.X.Offset + IlIlllllIIlIllIlI.X, lIIlIIlIlIllIlll.Y.Scale, lIIlIIlIlIllIlll.Y.Offset + IlIlllllIIlIllIlI.Y) end end) IIIlllIIllIIlIIII.InputEnded:Connect(function(IlIIllIIlIlllIll) if IlIIllIIlIlllIll.UserInputType == Enum.UserInputType.MouseButton1 then IIlIlIllIllllIll = false end end) if IlIIllllIllIIlIlI then local IlIlIlIlIlllIIll = false local lIIlIllIlIlIlIlll, llIIlIlIIlllIllI IlIIllllIllIIlIlI.InputBegan:Connect(function(lIlllIIlllIllIII) if lIlllIIlllIllIII.UserInputType == Enum.UserInputType.MouseButton1 then IlIlIlIlIlllIIll = true lIIlIllIlIlIlIlll = lIlllIIlllIllIII.Position llIIlIlIIlllIllI = lIllIIlllllIIIIlI.Size end end) IIIlllIIllIIlIIII.InputChanged:Connect(function(IlIIlIlIllIIlIll) if IlIlIlIlIlllIIll and IlIIlIlIllIIlIll.UserInputType == Enum.UserInputType.MouseMovement then local lIllIlIllllIIlIll = IlIIlIlIllIIlIll.Position - lIIlIllIlIlIlIlll local lIlIllIllIllllII = math.clamp(llIIlIlIIlllIllI.X.Offset + lIllIlIllllIIlIll.X, 300, 700) local IlIIllIIIlllIIlI = math.clamp(llIIlIlIIlllIllI.Y.Offset + lIllIlIllllIIlIll.Y, 400, 700) lIllIIlllllIIIIlI.Size = UDim2.new(0, lIlIllIllIllllII, 0, IlIIllIIIlllIIlI) end end) IIIlllIIllIIlIIII.InputEnded:Connect(function(IlIlIllIlIlIIlII) if IlIlIllIlIlIIlII.UserInputType == Enum.UserInputType.MouseButton1 then IlIlIlIlIlllIIll = false end end) end end local function lIIllIIIIllIIIIll() if IlIlllllIlllIlllI then IlIlllllIlllIlllI:Destroy() end IlIlllllIlllIlllI = Instance.new("ScreenGui") IlIlllllIlllIlllI.Name = "AntiFlingWindow" IlIlllllIlllIlllI.Parent = game:GetService("CoreGui") IlIlllllIlllIlllI.ResetOnSpawn = false local lIlIllllIlllIIllI = Instance.new("Frame") lIlIllllIlllIIllI.Size = UDim2.new(0, 380, 0, 480) lIlIllllIlllIIllI.Position = UDim2.new(0.5, -190, 0.5, -240) lIlIllllIlllIIllI.BackgroundColor3 = Color3.fromRGB(6, 10, 20) lIlIllllIlllIIllI.BackgroundTransparency = 0.05 lIlIllllIlllIIllI.BorderSizePixel = 0 lIlIllllIlllIIllI.ClipsDescendants = true lIlIllllIlllIIllI.Parent = IlIlllllIlllIlllI Instance.new("UICorner", lIlIllllIlllIIllI).CornerRadius = UDim.new(0, 14) Instance.new("UIStroke", lIlIllllIlllIIllI).Color = Color3.fromRGB(0, 200, 255) local llIIlIIlIlIlllIl = Instance.new("Frame") llIIlIIlIlIlllIl.Size = UDim2.new(1, 0, 1, 0) llIIlIIlIlIlllIl.BackgroundColor3 = Color3.fromRGB(0, 0, 0) llIIlIIlIlIlllIl.BackgroundTransparency = 0.85 llIIlIIlIlIlllIl.Parent = lIlIllllIlllIIllI for IllIIIIlllIIllIl = 1, 30 do local lllllIlllllllIIII = Instance.new("TextLabel") lllllIlllllllIIII.Size = UDim2.new(0, math.random(20, 50), 0, 16) lllllIlllllllIIII.Position = UDim2.new(math.random() * 0.95, 0, math.random() * 0.95, 0) lllllIlllllllIIII.Text = math.random(0, 1) == 0 and "0" or "1" lllllIlllllllIIII.TextColor3 = Color3.fromRGB(0, math.random(100, 200), math.random(50, 150)) lllllIlllllllIIII.BackgroundTransparency = 1 lllllIlllllllIIII.Font = Enum.Font.Code lllllIlllllllIIII.TextSize = math.random(8, 12) lllllIlllllllIIII.TextTransparency = 0.6 lllllIlllllllIIII.Parent = llIIlIIlIlIlllIl end local lIlIlIIlIlIllIll = Instance.new("Frame") lIlIlIIlIlIllIll.Size = UDim2.new(1, 0, 0, 40) lIlIlIIlIlIllIll.BackgroundColor3 = Color3.fromRGB(10, 14, 24) lIlIlIIlIlIllIll.BorderSizePixel = 0 lIlIlIIlIlIllIll.Parent = lIlIllllIlllIIllI Instance.new("UICorner", lIlIlIIlIlIllIll).CornerRadius = UDim.new(0, 14) local IlIIIIIlllIlllII = Instance.new("TextLabel") IlIIIIIlllIlllII.Size = UDim2.new(0, 40, 1, 0) IlIIIIIlllIlllII.BackgroundTransparency = 1 IlIIIIIlllIlllII.Text = "🛡️" IlIIIIIlllIlllII.TextColor3 = Color3.fromRGB(0, 200, 255) IlIIIIIlllIlllII.Font = Enum.Font.GothamBold IlIIIIIlllIlllII.TextSize = 22 IlIIIIIlllIlllII.Parent = lIlIlIIlIlIllIll local lIllIllIllllllIll = Instance.new("TextLabel") lIllIllIllllllIll.Size = UDim2.new(1, -80, 1, 0) lIllIllIllllllIll.Position = UDim2.new(0, 45, 0, 0) lIllIllIllllllIll.BackgroundTransparency = 1 lIllIllIllllllIll.Text = "◈ ANTI-FLING ◈" lIllIllIllllllIll.TextColor3 = Color3.fromRGB(0, 200, 255) lIllIllIllllllIll.Font = Enum.Font.GothamBold lIllIllIllllllIll.TextSize = 16 lIllIllIllllllIll.Parent = lIlIlIIlIlIllIll local IllIlIlIIlIllIIII = Instance.new("TextButton") IllIlIlIIlIllIIII.Size = UDim2.new(0, 30, 0, 30) IllIlIlIIlIllIIII.Position = UDim2.new(1, -38, 0, 5) IllIlIlIIlIllIIII.BackgroundColor3 = Color3.fromRGB(180, 30, 30) IllIlIlIIlIllIIII.Text = "✕" IllIlIlIIlIllIIII.TextColor3 = Color3.fromRGB(255,255,255) IllIlIlIIlIllIIII.Font = Enum.Font.GothamBold IllIlIlIIlIllIIII.TextSize = 16 IllIlIlIIlIllIIII.Parent = lIlIlIIlIlIllIll IllIlIlIIlIllIIII.MouseButton1Click:Connect(function() IlIlllllIlllIlllI:Destroy() end) local lIIllllIllllIIllI = Instance.new("Frame") lIIllllIllllIIllI.Size = UDim2.new(0, 15, 0, 15) lIIllllIllllIIllI.Position = UDim2.new(1, -15, 1, -15) lIIllllIllllIIllI.BackgroundColor3 = Color3.fromRGB(0, 200, 255) lIIllllIllllIIllI.BackgroundTransparency = 0.5 lIIllllIllllIIllI.Parent = lIlIllllIlllIIllI Instance.new("UICorner", lIIllllIllllIIllI).CornerRadius = UDim.new(0, 3) local lllllllIIIlllIIlI = Instance.new("ScrollingFrame") lllllllIIIlllIIlI.Size = UDim2.new(1, -20, 0, 320) lllllllIIIlllIIlI.Position = UDim2.new(0, 10, 0, 55) lllllllIIIlllIIlI.BackgroundTransparency = 1 lllllllIIIlllIIlI.CanvasSize = UDim2.new(0, 0, 0, 0) lllllllIIIlllIIlI.ScrollBarThickness = 5 lllllllIIIlllIIlI.Parent = lIlIllllIlllIIllI local llIIlIlIlIlllllI = Instance.new("Frame") llIIlIlIlIlllllI.Size = UDim2.new(1, -20, 0, 40) llIIlIlIlIlllllI.Position = UDim2.new(0, 10, 0, 390) llIIlIlIlIlllllI.BackgroundTransparency = 1 llIIlIlIlIlllllI.Parent = lIlIllllIlllIIllI local llIlllIlllIllllII = Instance.new("TextButton") llIlllIlllIllllII.Size = UDim2.new(0.48, -5, 1, 0) llIlllIlllIllllII.Position = UDim2.new(0, 0, 0, 0) llIlllIlllIllllII.BackgroundColor3 = Color3.fromRGB(40, 40, 60) llIlllIlllIllllII.Text = "SELECT ALL" llIlllIlllIllllII.TextColor3 = Color3.fromRGB(255,255,255) llIlllIlllIllllII.Font = Enum.Font.GothamBold llIlllIlllIllllII.TextSize = 12 llIlllIlllIllllII.Parent = llIIlIlIlIlllllI Instance.new("UICorner", llIlllIlllIllllII).CornerRadius = UDim.new(0, 6) local llllIIllllllllIl = Instance.new("TextButton") llllIIllllllllIl.Size = UDim2.new(0.48, -5, 1, 0) llllIIllllllllIl.Position = UDim2.new(0.52, 5, 0, 0) llllIIllllllllIl.BackgroundColor3 = Color3.fromRGB(40, 40, 60) llllIIllllllllIl.Text = "DESELECT ALL" llllIIllllllllIl.TextColor3 = Color3.fromRGB(255,255,255) llllIIllllllllIl.Font = Enum.Font.GothamBold llllIIllllllllIl.TextSize = 12 llllIIllllllllIl.Parent = llIIlIlIlIlllllI Instance.new("UICorner", llllIIllllllllIl).CornerRadius = UDim.new(0, 6) local llIIIIlIlIllllIl = 0 local IlIlllIIlllllllI = {} for _, lIllIlllllIllIlll in pairs(IlIlIllIIlIIlIIIl:GetPlayers()) do if lIllIlllllIllIlll ~= lllllllllllllIIII then local lIllIIlllllllllI = Instance.new("Frame") lIllIIlllllllllI.Size = UDim2.new(1, 0, 0, 35) lIllIIlllllllllI.Position = UDim2.new(0, 0, 0, llIIIIlIlIllllIl) lIllIIlllllllllI.BackgroundColor3 = Color3.fromRGB(18, 22, 34) lIllIIlllllllllI.BackgroundTransparency = 0.5 lIllIIlllllllllI.Parent = lllllllIIIlllIIlI Instance.new("UICorner", lIllIIlllllllllI).CornerRadius = UDim.new(0, 6) local IlIlllllllllllII = Instance.new("Frame") IlIlllllllllllII.Size = UDim2.new(0, 20, 0, 20) IlIlllllllllllII.Position = UDim2.new(0, 10, 0.5, -10) IlIlllllllllllII.BackgroundColor3 = Color3.fromRGB(40, 44, 60) IlIlllllllllllII.Parent = lIllIIlllllllllI Instance.new("UICorner", IlIlllllllllllII).CornerRadius = UDim.new(0, 4) local lIlllllIIlIIlIIlI = Instance.new("TextLabel") lIlllllIIlIIlIIlI.Size = UDim2.new(1, 0, 1, 0) lIlllllIIlIIlIIlI.BackgroundTransparency = 1 lIlllllIIlIIlIIlI.Text = "●" lIlllllIIlIIlIIlI.TextColor3 = Color3.fromRGB(0, 200, 255) lIlllllIIlIIlIIlI.TextSize = 14 lIlllllIIlIIlIIlI.Visible = IIIlllIlllIlIllll[lIllIlllllIllIlll.Name] == true lIlllllIIlIIlIIlI.Parent = IlIlllllllllllII local IlIlllIIllIIIIIIl = Instance.new("TextLabel") IlIlllIIllIIIIIIl.Size = UDim2.new(1, -45, 1, 0) IlIlllIIllIIIIIIl.Position = UDim2.new(0, 45, 0, 0) IlIlllIIllIIIIIIl.BackgroundTransparency = 1 IlIlllIIllIIIIIIl.Text = lIllIlllllIllIlll.Name IlIlllIIllIIIIIIl.TextColor3 = Color3.fromRGB(220, 220, 220) IlIlllIIllIIIIIIl.Font = Enum.Font.Gotham IlIlllIIllIIIIIIl.TextSize = 12 IlIlllIIllIIIIIIl.TextXAlignment = Enum.TextXAlignment.Left IlIlllIIllIIIIIIl.Parent = lIllIIlllllllllI local lIIlIlllIllIllIll = Instance.new("TextButton") lIIlIlllIllIllIll.Size = UDim2.new(1, 0, 1, 0) lIIlIlllIllIllIll.BackgroundTransparency = 1 lIIlIlllIllIllIll.Text = "" lIIlIlllIllIllIll.Parent = lIllIIlllllllllI lIIlIlllIllIllIll.MouseButton1Click:Connect(function() if IIIlllIlllIlIllll[lIllIlllllIllIlll.Name] then IIIlllIlllIlIllll[lIllIlllllIllIlll.Name] = nil lIlllllIIlIIlIIlI.Visible = false else IIIlllIlllIlIllll[lIllIlllllIllIlll.Name] = true lIlllllIIlIIlIIlI.Visible = true end lIlIlIlllIlllIlIl() end) IlIlllIIlllllllI[lIllIlllllIllIlll.Name] = lIlllllIIlIIlIIlI llIIIIlIlIllllIl = llIIIIlIlIllllIl + 40 end end llIlllIlllIllllII.MouseButton1Click:Connect(function() for _, lIlIIlIlIllllIll in pairs(IlIlIllIIlIIlIIIl:GetPlayers()) do if lIlIIlIlIllllIll ~= lllllllllllllIIII then IIIlllIlllIlIllll[lIlIIlIlIllllIll.Name] = true if IlIlllIIlllllllI[lIlIIlIlIllllIll.Name] then IlIlllIIlllllllI[lIlIIlIlIllllIll.Name].Visible = true end end end lIlIlIlllIlllIlIl() end) llllIIllllllllIl.MouseButton1Click:Connect(function() for _, lIlIIllIIlllIIIl in pairs(IlIlIllIIlIIlIIIl:GetPlayers()) do if lIlIIllIIlllIIIl ~= lllllllllllllIIII then IIIlllIlllIlIllll[lIlIIllIIlllIIIl.Name] = nil if IlIlllIIlllllllI[lIlIIllIIlllIIIl.Name] then IlIlllIIlllllllI[lIlIIllIIlllIIIl.Name].Visible = false end end end lIlIlIlllIlllIlIl() end) lllllllIIIlllIIlI.CanvasSize = UDim2.new(0, 0, 0, llIIIIlIlIllllIl + 10) IIllIlllllIlIlIll(lIlIllllIlllIIllI, lIlIlIIlIlIllIll, lIIllllIllllIIllI) end lIIlIIIllIIlIllIl.MouseButton1Click:Connect(lIIllIIIIllIIIIll) local function lIlllllIllllIllIl() lllllllllllllIIII:SetAttribute("StealthEnabled", IIIlIlllIlllIlIIl) end local function IIIIlIlllllllIlll() local IllIllllllIIlllll = lllllllllllllIIII:GetAttribute("StealthEnabled") if IllIllllllIIlllll ~= nil then IIIlIlllIlllIlIIl = IllIllllllIIlllll end end local function lIIllllIIlllIllIl() if IlIlIlIllllIllll then IlIlIlIllllIllll:Destroy() end IlIlIlIllllIllll = Instance.new("ScreenGui") IlIlIlIllllIllll.Name = "StealthModules" IlIlIlIllllIllll.Parent = game:GetService("CoreGui") IlIlIlIllllIllll.ResetOnSpawn = false local lIlIllllllllIlllI = Instance.new("Frame") lIlIllllllllIlllI.Size = UDim2.new(0, 380, 0, 160) lIlIllllllllIlllI.Position = UDim2.new(0.5, -190, 0.5, -80) lIlIllllllllIlllI.BackgroundColor3 = Color3.fromRGB(6, 10, 20) lIlIllllllllIlllI.BackgroundTransparency = 0.05 lIlIllllllllIlllI.BorderSizePixel = 0 lIlIllllllllIlllI.ClipsDescendants = true lIlIllllllllIlllI.Parent = IlIlIlIllllIllll Instance.new("UICorner", lIlIllllllllIlllI).CornerRadius = UDim.new(0, 14) Instance.new("UIStroke", lIlIllllllllIlllI).Color = Color3.fromRGB(0, 200, 255) local lIllIlllIlllllIll = Instance.new("Frame") lIllIlllIlllllIll.Size = UDim2.new(1, 0, 1, 0) lIllIlllIlllllIll.BackgroundColor3 = Color3.fromRGB(0, 0, 0) lIllIlllIlllllIll.BackgroundTransparency = 0.85 lIllIlllIlllllIll.Parent = lIlIllllllllIlllI local lIllllllIllllIllI = Instance.new("Frame") lIllllllIllllIllI.Size = UDim2.new(1, 0, 0, 40) lIllllllIllllIllI.BackgroundColor3 = Color3.fromRGB(10, 14, 24) lIllllllIllllIllI.BorderSizePixel = 0 lIllllllIllllIllI.Parent = lIlIllllllllIlllI Instance.new("UICorner", lIllllllIllllIllI).CornerRadius = UDim.new(0, 14) local lIIIIIlllIlllIlI = Instance.new("TextLabel") lIIIIIlllIlllIlI.Size = UDim2.new(0, 40, 1, 0) lIIIIIlllIlllIlI.BackgroundTransparency = 1 lIIIIIlllIlllIlI.Text = "🛡️" lIIIIIlllIlllIlI.TextColor3 = Color3.fromRGB(0, 200, 255) lIIIIIlllIlllIlI.Font = Enum.Font.GothamBold lIIIIIlllIlllIlI.TextSize = 22 lIIIIIlllIlllIlI.Parent = lIllllllIllllIllI local lIIIIllIIIlllIIIl = Instance.new("TextLabel") lIIIIllIIIlllIIIl.Size = UDim2.new(1, -80, 1, 0) lIIIIllIIIlllIIIl.Position = UDim2.new(0, 45, 0, 0) lIIIIllIIIlllIIIl.BackgroundTransparency = 1 lIIIIllIIIlllIIIl.Text = "◈ STEALTH ◈" lIIIIllIIIlllIIIl.TextColor3 = Color3.fromRGB(0, 200, 255) lIIIIllIIIlllIIIl.Font = Enum.Font.GothamBold lIIIIllIIIlllIIIl.TextSize = 16 lIIIIllIIIlllIIIl.Parent = lIllllllIllllIllI local IlIllIlIIllllIll = Instance.new("TextButton") IlIllIlIIllllIll.Size = UDim2.new(0, 30, 0, 30) IlIllIlIIllllIll.Position = UDim2.new(1, -38, 0, 5) IlIllIlIIllllIll.BackgroundColor3 = Color3.fromRGB(180, 30, 30) IlIllIlIIllllIll.Text = "✕" IlIllIlIIllllIll.TextColor3 = Color3.fromRGB(255,255,255) IlIllIlIIllllIll.Font = Enum.Font.GothamBold IlIllIlIIllllIll.TextSize = 16 IlIllIlIIllllIll.Parent = lIllllllIllllIllI IlIllIlIIllllIll.MouseButton1Click:Connect(function() IlIlIlIllllIllll:Destroy() end) local lIIllllIlllIIlIlI = Instance.new("Frame") lIIllllIlllIIlIlI.Size = UDim2.new(0, 15, 0, 15) lIIllllIlllIIlIlI.Position = UDim2.new(1, -15, 1, -15) lIIllllIlllIIlIlI.BackgroundColor3 = Color3.fromRGB(0, 200, 255) lIIllllIlllIIlIlI.BackgroundTransparency = 0.5 lIIllllIlllIIlIlI.Parent = lIlIllllllllIlllI Instance.new("UICorner", lIIllllIlllIIlIlI).CornerRadius = UDim.new(0, 3) local IlIlllIlIIlIIIIlI = Instance.new("ScrollingFrame") IlIlllIlIIlIIIIlI.Size = UDim2.new(1, -20, 0, 60) IlIlllIlIIlIIIIlI.Position = UDim2.new(0, 10, 0, 55) IlIlllIlIIlIIIIlI.BackgroundTransparency = 1 IlIlllIlIIlIIIIlI.CanvasSize = UDim2.new(0, 0, 0, 0) IlIlllIlIIlIIIIlI.ScrollBarThickness = 5 IlIlllIlIIlIIIIlI.Parent = lIlIllllllllIlllI local IlllllllIlllllIIl = Instance.new("Frame") IlllllllIlllllIIl.Size = UDim2.new(1, 0, 0, 55) IlllllllIlllllIIl.Position = UDim2.new(0, 0, 0, 0) IlllllllIlllllIIl.BackgroundColor3 = Color3.fromRGB(18, 22, 34) IlllllllIlllllIIl.BackgroundTransparency = 0.5 IlllllllIlllllIIl.Parent = IlIlllIlIIlIIIIlI Instance.new("UICorner", IlllllllIlllllIIl).CornerRadius = UDim.new(0, 6) local llIlIlllIllIlIlI = Instance.new("Frame") llIlIlllIllIlIlI.Size = UDim2.new(0, 22, 0, 22) llIlIlllIllIlIlI.Position = UDim2.new(0, 10, 0.5, -11) llIlIlllIllIlIlI.BackgroundColor3 = Color3.fromRGB(40, 44, 60) llIlIlllIllIlIlI.Parent = IlllllllIlllllIIl Instance.new("UICorner", llIlIlllIllIlIlI).CornerRadius = UDim.new(0, 4) local llllIIllIllIIlll = Instance.new("TextLabel") llllIIllIllIIlll.Size = UDim2.new(1, 0, 1, 0) llllIIllIllIIlll.BackgroundTransparency = 1 llllIIllIllIIlll.Text = "●" llllIIllIllIIlll.TextColor3 = Color3.fromRGB(0, 200, 255) llllIIllIllIIlll.TextSize = 16 llllIIllIllIIlll.Visible = IIIlIlllIlllIlIIl llllIIllIllIIlll.Parent = llIlIlllIllIlIlI local lIlllIllIllllIIII = Instance.new("TextLabel") lIlllIllIllllIIII.Size = UDim2.new(1, -50, 0, 20) lIlllIllIllllIIII.Position = UDim2.new(0, 45, 0, 5) lIlllIllIllllIIII.BackgroundTransparency = 1 lIlllIllIllllIIII.Text = "Timing Mixer" lIlllIllIllllIIII.TextColor3 = Color3.fromRGB(220, 220, 220) lIlllIllIllllIIII.Font = Enum.Font.GothamBold lIlllIllIllllIIII.TextSize = 13 lIlllIllIllllIIII.TextXAlignment = Enum.TextXAlignment.Left lIlllIllIllllIIII.Parent = IlllllllIlllllIIl local lIIIIllIlIIlllIlI = Instance.new("TextLabel") lIIIIllIlIIlllIlI.Size = UDim2.new(1, -50, 0, 18) lIIIIllIlIIlllIlI.Position = UDim2.new(0, 45, 0, 27) lIIIIllIlIIlllIlI.BackgroundTransparency = 1 lIIIIllIlIIlllIlI.Text = "Randomizes cycle delays (stealth only)" lIIIIllIlIIlllIlI.TextColor3 = Color3.fromRGB(150, 150, 150) lIIIIllIlIIlllIlI.Font = Enum.Font.Gotham lIIIIllIlIIlllIlI.TextSize = 10 lIIIIllIlIIlllIlI.TextXAlignment = Enum.TextXAlignment.Left lIIIIllIlIIlllIlI.Parent = IlllllllIlllllIIl local IlIllllllllllIII = Instance.new("TextButton") IlIllllllllllIII.Size = UDim2.new(1, 0, 1, 0) IlIllllllllllIII.BackgroundTransparency = 1 IlIllllllllllIII.Text = "" IlIllllllllllIII.Parent = IlllllllIlllllIIl IlIllllllllllIII.MouseButton1Click:Connect(function() IIIlIlllIlllIlIIl = not IIIlIlllIlllIlIIl llllIIllIllIIlll.Visible = IIIlIlllIlllIlIIl lIlllllIllllIllIl() end) IlIlllIlIIlIIIIlI.CanvasSize = UDim2.new(0, 0, 0, 65) IIllIlllllIlIlIll(lIlIllllllllIlllI, lIllllllIllllIllI, lIIllllIlllIIlIlI) end lIIllIlllIlIIlIlI.MouseButton1Click:Connect(lIIllllIIlllIllIl) local function lIllIlllIllIlIlll() local IllIlllIIlIIllIII = 0 for _ in pairs(Illllllllllllllll) do IllIlllIIlIIllIII = IllIlllIIlIIllIII + 1 end if IlIlIlIlllIIlIlIl then IlIIIlIlllllllIll.Text = "🔴 ACTIVE | TARGETS: " .. IllIlllIIlIIllIII IlIIIlIlllllllIll.TextColor3 = Color3.fromRGB(255, 80, 80) else IlIIIlIlllllllIll.Text = "🟢 STANDBY | TARGETS: " .. IllIlllIIlIIllIII IlIIIlIlllllllIll.TextColor3 = Color3.fromRGB(150, 200, 150) end end local function IlIIIlIlllIllIIll() for _, lIIlllIIlIllIIIll in pairs(lIIlIlllIllIIlIlI:GetChildren()) do lIIlllIIlIllIIIll:Destroy() end IlllllllllllllllI = {} local lIlIlllIlIllllIl = 5 local lIlllIllllllIIIIl = {} for _, lIllllllllIllllll in pairs(IlIlIllIIlIIlIIIl:GetPlayers()) do table.insert(lIlllIllllllIIIIl, lIllllllllIllllll) end table.sort(lIlllIllllllIIIIl, function(lIlllIlIllIlllIl, lIlllllllIllIIIIl) return lIlllIlIllIlllIl.Name:lower() < lIlllllllIllIIIIl.Name:lower() end) for _, IllllIIllIlIllll in pairs(lIlllIllllllIIIIl) do if IllllIIllIlIllll ~= lllllllllllllIIII then local llllllIIlllIlllI = Instance.new("Frame") llllllIIlllIlllI.Size = UDim2.new(1, -10, 0, 32) llllllIIlllIlllI.Position = UDim2.new(0, 5, 0, lIlIlllIlIllllIl) llllllIIlllIlllI.BackgroundColor3 = Color3.fromRGB(25, 28, 42) llllllIIlllIlllI.BackgroundTransparency = 0.4 llllllIIlllIlllI.BorderSizePixel = 0 llllllIIlllIlllI.Parent = lIIlIlllIllIIlIlI Instance.new("UICorner", llllllIIlllIlllI).CornerRadius = UDim.new(0, 6) local llIIlIllIllllIIl = Instance.new("Frame") llIIlIllIllllIIl.Size = UDim2.new(0, 20, 0, 20) llIIlIllIllllIIl.Position = UDim2.new(0, 8, 0.5, -10) llIIlIllIllllIIl.BackgroundColor3 = Color3.fromRGB(40, 44, 60) llIIlIllIllllIIl.Parent = llllllIIlllIlllI Instance.new("UICorner", llIIlIllIllllIIl).CornerRadius = UDim.new(0, 4) local lIIlIllllIlIIlllI = Instance.new("TextLabel") lIIlIllllIlIIlllI.Size = UDim2.new(1, 0, 1, 0) lIIlIllllIlIIlllI.BackgroundTransparency = 1 lIIlIllllIlIIlllI.Text = "●" lIIlIllllIlIIlllI.TextColor3 = Color3.fromRGB(0, 200, 255) lIIlIllllIlIIlllI.TextSize = 14 lIIlIllllIlIIlllI.Visible = Illllllllllllllll[IllllIIllIlIllll.Name] ~= nil lIIlIllllIlIIlllI.Parent = llIIlIllIllllIIl local IlIIlIlIlIlllIlIl = Instance.new("TextLabel") IlIIlIlIlIlllIlIl.Size = UDim2.new(1, -45, 1, 0) IlIIlIlIlIlllIlIl.Position = UDim2.new(0, 38, 0, 0) IlIIlIlIlIlllIlIl.BackgroundTransparency = 1 IlIIlIlIlIlllIlIl.Text = IllllIIllIlIllll.Name IlIIlIlIlIlllIlIl.TextColor3 = Color3.fromRGB(220, 220, 220) IlIIlIlIlIlllIlIl.Font = Enum.Font.Gotham IlIIlIlIlIlllIlIl.TextSize = 12 IlIIlIlIlIlllIlIl.TextXAlignment = Enum.TextXAlignment.Left IlIIlIlIlIlllIlIl.Parent = llllllIIlllIlllI local IIIllIllIlIlIIlII = Instance.new("TextButton") IIIllIllIlIlIIlII.Size = UDim2.new(1, 0, 1, 0) IIIllIllIlIlIIlII.BackgroundTransparency = 1 IIIllIllIlIlIIlII.Text = "" IIIllIllIlIlIIlII.Parent = llllllIIlllIlllI IIIllIllIlIlIIlII.MouseButton1Click:Connect(function() if Illllllllllllllll[IllllIIllIlIllll.Name] then Illllllllllllllll[IllllIIllIlIllll.Name] = nil lIIlIllllIlIIlllI.Visible = false else Illllllllllllllll[IllllIIllIlIllll.Name] = IllllIIllIlIllll lIIlIllllIlIIlllI.Visible = true end lIllIlllIllIlIlll() end) IlllllllllllllllI[IllllIIllIlIllll.Name] = lIIlIllllIlIIlllI lIlIlllIlIllllIl = lIlIlllIlIllllIl + 38 end end lIIlIlllIllIIlIlI.CanvasSize = UDim2.new(0, 0, 0, lIlIlllIlIllllIl + 10) end local function lIllllIllIlllllIl(lIllllllIlIIIlIll) for _, IIIlllIIlIlllllI in pairs(IlIlIllIIlIIlIIIl:GetPlayers()) do if IIIlllIIlIlllllI ~= lllllllllllllIIII and IlllllllllllllllI[IIIlllIIlIlllllI.Name] then if lIllllllIlIIIlIll then Illllllllllllllll[IIIlllIIlIlllllI.Name] = IIIlllIIlIlllllI IlllllllllllllllI[IIIlllIIlIlllllI.Name].Visible = true else Illllllllllllllll[IIIlllIIlIlllllI.Name] = nil IlllllllllllllllI[IIIlllIIlIlllllI.Name].Visible = false end end end lIllIlllIllIlIlll() end local function lIllIllIIlIlIlllI(lIlllIlllIllIlll, IlIllIlIllIIlIllIl, lIllIllIIlIIlllII) lIlllIlllIllIlll:SetCore("SendNotification", {Title = IlIllIlIllIIlIllIl, Text = lIllIllIIlIIlllII, Duration = lIllIllIIlIIlllII or 3}) end local function lIlIllIlIllIllIIl(lIllIllIlIIlIIlll) local lIlllIllIlllIllIl = lllllllllllllIIII.Character local lIlllIllIlllIllIlI = lIlllIllIlllIllIl and lIlllIllIlllIllIl:FindFirstChildOfClass("Humanoid") local lIllllllllIllllll = lIlllIllIlllIllIlI and lIlllIllIlllIllIlI.RootPart local IllIlllIIlllIllll = lIllIllIlIIlIIlll.Character if not IllIlllIIlllIllll then return end local IllllllIlllIlIlIl = IllIlllIIlllIllll:FindFirstChildOfClass("Humanoid") local lIlllIlllIllIlllI = IllllllIlllIlIlIl and IllllllIlllIlIlIl.RootPart local IlllIlllIllIlllIl = IllIlllIIlllIllll:FindFirstChild("Head") if not lIlllIllIlllIllIl or not lIlllIllIlllIllIlI or not lIllllllllIllllll then return lIllIllIIlIlIlllI("D3DS3C", "Character not ready", 2) end if not IllIlllIIlllIllll:FindFirstChildWhichIsA("BasePart") then return end if lIllllllllIllllll.Velocity.Magnitude < 50 then getgenv().OldPos = lIllllllllIllllll.CFrame end if IlllIlllIllIlllIl then workspace.CurrentCamera.CameraSubject = IlllIlllIllIlllIl elseif lIlllIlllIllIlllI then workspace.CurrentCamera.CameraSubject = lIlllIlllIllIlllI end local function llIIllllllIllIII(lIllIllllllIllII, lIIlIllIlIllIlllI, lIIlllIllllllIlI, lIIlIlllIllllIlI, lIlllIllIlllIllIlI, lIlIllllIllIIlIl, lIIlIllIlIlllIllI) lIllllllllIllllll.CFrame = CFrame.new(lIllIllllllIllII.Position) * CFrame.new(lIIlIllIlIllIlllI, lIIlllIllllllIlI, lIIlIlllIllllIlI) lIlllIllIlllIllIl:SetPrimaryPartCFrame(CFrame.new(lIllIllllllIllII.Position) * CFrame.new(lIIlIllIlIllIlllI, lIIlllIllllllIlI, lIIlIlllIllllIlI)) if IllllllIlllIlIlIl then IllllllIlllIlIlIl.PlatformStand = true IllllllIlllIlIlIl.Sit = false if lIlllIlllIllIlllI then lIlllIlllIllIlllI.Velocity = Vector3.new(0,0,0) end end lIllllllllIllllll.Velocity = Vector3.new(9e9, 9e9, 9e9) lIllllllllIllllll.RotVelocity = Vector3.new(9e9, 9e9, 9e9) end local function IlIlIlllIllIllIll(lIllIIIlllllIllI) local lIlllIlIlIlllIll = tick() local lIIlIlllIIllIIIl = 0 repeat if lIllllllllIllllll and IllllllIlllIlIlIl then lIIlIlllIIllIIIl = lIIlIlllIIllIIIl + 180 llIIllllllIllIII(lIllIIIlllllIllI, 0, 1.8, 0, math.rad(lIIlIlllIIllIIIl), 0, 0) task.wait() llIIllllllIllIII(lIllIIIlllllIllI, 0, -1.8, 0, math.rad(lIIlIlllIIllIIIl), 0, 0) task.wait() llIIllllllIllIII(lIllIIIlllllIllI, 0, 1.8, IllllllIlllIlIlIl.WalkSpeed / 2, math.rad(lIIlIlllIIllIIIl), 0, 0) task.wait() llIIllllllIllIII(lIllIIIlllllIllI, 0, -1.8, -IllllllIlllIlIlIl.WalkSpeed / 2, math.rad(lIIlIlllIIllIIIl), 0, 0) task.wait() end until lIlllIlIlIlllIll + 2.5 < tick() or not IlIlIlIlllIIlIlIl end workspace.FallenPartsDestroyHeight = 0/0 local IlllllllIlIllIll = Instance.new("BodyVelocity") IlllllllIlIllIll.Parent = lIllllllllIllllll IlllllllIlIllIll.Velocity = Vector3.new(0, 0, 0) IlllllllIlIllIll.MaxForce = Vector3.new(9e9, 9e9, 9e9) lIlllIllIlllIllIlI:SetStateEnabled(Enum.HumanoidStateType.Seated, false) if lIlllIlllIllIlllI then IlIlIlllIllIllIll(lIlllIlllIllIlllI) if lIllllllllIllllll and lIllllllllIllllll.Velocity.Magnitude < 1e7 then IlIlIlllIllIllIll(lIlllIlllIllIlllI) end elseif IlllIlllIllIlllIl then IlIlIlllIllIllIll(IlllIlllIllIlllIl) if lIllllllllIllllll and lIllllllllIllllll.Velocity.Magnitude < 1e7 then IlIlIlllIllIllIll(IlllIlllIllIlllIl) end end IlllllllIlIllIll:Destroy() if IllllllIlllIlIlIl then IllllllIlllIlIlIl.PlatformStand = false end lIlllIllIlllIllIlI:SetStateEnabled(Enum.HumanoidStateType.Seated, true) workspace.CurrentCamera.CameraSubject = lIlllIllIlllIllIlI if getgenv().OldPos then repeat lIllllllllIllllll.CFrame = getgenv().OldPos * CFrame.new(0, 0.5, 0) lIlllIllIlllIllIl:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, 0.5, 0)) lIlllIllIlllIllIlI:ChangeState("GettingUp") for _, lIllIllIlIlIlIlII in pairs(lIlllIllIlllIllIl:GetChildren()) do if lIllIllIlIlIlIlII:IsA("BasePart") then lIllIllIlIlIlIlII.Velocity, lIllIllIlIlIlIlII.RotVelocity = Vector3.new(), Vector3.new() end end task.wait() until (lIllllllllIllllll.Position - getgenv().OldPos.p).Magnitude < 25 workspace.FallenPartsDestroyHeight = getgenv().FPDH end end local function IlIlllIlIlllllll() if IlIlIlIlllIIlIlIl then return end local lIllIllIIlllIlllI = 0 for _ in pairs(Illllllllllllllll) do lIllIllIIlllIlllI = lIllIllIIlllIlllI + 1 end if lIllIllIIlllIlllI == 0 then IlIIIlIlllllllIll.Text = "⚠️ NO TARGETS SELECTED" task.wait(1) lIllIlllIllIlIlll() return end IlIlIlIlllIIlIlIl = true lIllIlllIllIlIlll() lIllIllIIlIlIlllI("D3DS3C", "Engaging " .. lIllIllIIlllIlllI .. " targets", 2) spawn(function() while IlIlIlIlllIIlIlIl do local IllIllIlllIllIll = {} for lIlIlllIlllllIll, lIlllllllllIlIllI in pairs(Illllllllllllllll) do if lIlllllllllIlIllI and lIlllllllllIlIllI.Parent then IllIllIlllIllIll[lIlIlllIlllllIll] = lIlllllllllIlIllI else Illllllllllllllll[lIlIlllIlllllIll] = nil end end for _, lIllIllIllllIIlll in pairs(IllIllIlllIllIll) do if IlIlIlIlllIIlIlIl then lIlIllIlIllIllIIl(lIllIllIllllIIlll) task.wait() end end lIllIlllIllIlIlll() if IIIlIlllIlllIlIIl then local lIlllllllIllIllII = math.random() * 0.2 task.wait(lIlllllllIllIllII) else task.wait(0.1) end end end) end local function IllllllIllIIlIlll() if not IlIlIlIlllIIlIlIl then return end IlIlIlIlllIIlIlIl = false lIllIlllIllIlIlll() lIllIllIIlIlIlllI("D3DS3C", "System disengaged", 2) end IIIlllllIIllIlIIl.MouseButton1Click:Connect(IlIlllIlIlllllll) IIlIlllIlIIlIlIIl.MouseButton1Click:Connect(IllllllIllIIlIlll) IIIlllllllIIllIlI.MouseButton1Click:Connect(function() lIllllIllIlllllIl(true) end) lIIIlllIlllllllII.MouseButton1Click:Connect(function() lIllllIllIlllllIl(false) end) IlIlIllIIlIIlIIIl.PlayerAdded:Connect(IlIIIlIlllIllIIll) IlIlIllIIlIIlIIIl.PlayerRemoving:Connect(function(lIlIIlIlllIllIII) if Illllllllllllllll[lIlIIlIlllIllIII.Name] then Illllllllllllllll[lIlIIlIlllIllIII.Name] = nil end IlIIIlIlllIllIIll() lIllIlllIllIlIlll() IIIlllIlllIlIllll[lIlIIlIlllIllIII.Name] = nil end) local function IlllIllIlllIllIIl() task.wait(0.5) lIlIlIlllIlllIlIl() end lllllllllllllIIII.CharacterAdded:Connect(IlllIllIlllIllIIl) IIllIlllllIlIlIll(lllIIlIlIlIIlIIII, IIIllllllIIllIIIl, IIIlIlIIlllIIlIII) IIIIlIlllllllIlll() IlIIIlIlllIllIIll() lIllIlllIllIlIlll() lIllIllIIlIlIlllI("D3DS3C", "System online", 3)
+-- Show warning before anything else
+showWarning()
+
+-- ========== MAIN GUI (D3DSEC STYLE) ==========
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "D3DSEC_Vortex"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game:GetService("CoreGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 420, 0, 520)
+mainFrame.Position = UDim2.new(0.5, -210, 0.5, -260)
+mainFrame.BackgroundColor3 = Color3.fromRGB(8, 12, 24)
+mainFrame.BackgroundTransparency = 0.08
+mainFrame.BorderSizePixel = 0
+mainFrame.ClipsDescendants = true
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 14)
+Instance.new("UIStroke", mainFrame).Color = Color3.fromRGB(0, 255, 80)
+
+-- Background matrix
+local bgMatrix = Instance.new("Frame")
+bgMatrix.Size = UDim2.new(1, 0, 1, 0)
+bgMatrix.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+bgMatrix.BackgroundTransparency = 0.75
+bgMatrix.Parent = mainFrame
+
+for i = 1, 40 do
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(0, math.random(30, 70), 0, 18)
+    lbl.Position = UDim2.new(math.random() * 0.95, 0, math.random() * 0.95, 0)
+    lbl.Text = math.random(0,1) == 0 and "0" or "1"
+    lbl.TextColor3 = Color3.fromRGB(0, math.random(150, 255), math.random(80, 150))
+    lbl.BackgroundTransparency = 1
+    lbl.Font = Enum.Font.Code
+    lbl.TextSize = math.random(10, 14)
+    lbl.TextTransparency = math.random(3, 7) / 10
+    lbl.Parent = bgMatrix
+end
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.BackgroundColor3 = Color3.fromRGB(12, 16, 28)
+titleBar.BackgroundTransparency = 0.3
+titleBar.Parent = mainFrame
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 14)
+
+local icon = Instance.new("TextLabel")
+icon.Size = UDim2.new(0, 40, 1, 0)
+icon.BackgroundTransparency = 1
+icon.Text = "⚡"
+icon.TextColor3 = Color3.fromRGB(0, 255, 80)
+icon.Font = Enum.Font.GothamBold
+icon.TextSize = 24
+icon.Parent = titleBar
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -80, 1, 0)
+title.Position = UDim2.new(0, 45, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "◈ D3DSEC_VORTEX ◈"
+title.TextColor3 = Color3.fromRGB(0, 255, 80)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.Parent = titleBar
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -38, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(180, 30, 30)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.Parent = titleBar
+closeBtn.MouseButton1Click:Connect(function() screenGui:Destroy() end)
+
+local resizeHandle = Instance.new("Frame")
+resizeHandle.Size = UDim2.new(0, 15, 0, 15)
+resizeHandle.Position = UDim2.new(1, -15, 1, -15)
+resizeHandle.BackgroundColor3 = Color3.fromRGB(0, 255, 80)
+resizeHandle.BackgroundTransparency = 0.5
+resizeHandle.Parent = mainFrame
+Instance.new("UICorner", resizeHandle).CornerRadius = UDim.new(0, 3)
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Position = UDim2.new(0, 15, 0, 50)
+statusLabel.Size = UDim2.new(1, -30, 0, 22)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "STANDBY | TARGETS: 0"
+statusLabel.TextColor3 = Color3.fromRGB(150, 255, 150)
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextSize = 12
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = mainFrame
+
+local listFrame = Instance.new("Frame")
+listFrame.Position = UDim2.new(0, 10, 0, 80)
+listFrame.Size = UDim2.new(1, -20, 0, 280)
+listFrame.BackgroundColor3 = Color3.fromRGB(15, 19, 30)
+listFrame.BackgroundTransparency = 0.4
+listFrame.Parent = mainFrame
+Instance.new("UICorner", listFrame).CornerRadius = UDim.new(0, 8)
+
+local playerScroll = Instance.new("ScrollingFrame")
+playerScroll.Position = UDim2.new(0, 5, 0, 5)
+playerScroll.Size = UDim2.new(1, -10, 1, -10)
+playerScroll.BackgroundTransparency = 1
+playerScroll.ScrollBarThickness = 5
+playerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerScroll.Parent = listFrame
+
+local engageBtn = Instance.new("TextButton")
+engageBtn.Position = UDim2.new(0, 10, 0, 375)
+engageBtn.Size = UDim2.new(0.48, -5, 0, 36)
+engageBtn.BackgroundColor3 = Color3.fromRGB(0, 140, 0)
+engageBtn.Text = "▶ ENGAGE"
+engageBtn.TextColor3 = Color3.fromRGB(255,255,255)
+engageBtn.Font = Enum.Font.GothamBold
+engageBtn.TextSize = 14
+engageBtn.Parent = mainFrame
+Instance.new("UICorner", engageBtn).CornerRadius = UDim.new(0, 8)
+
+local disengageBtn = Instance.new("TextButton")
+disengageBtn.Position = UDim2.new(0.52, 5, 0, 375)
+disengageBtn.Size = UDim2.new(0.48, -5, 0, 36)
+disengageBtn.BackgroundColor3 = Color3.fromRGB(140, 0, 0)
+disengageBtn.Text = "■ DISENGAGE"
+disengageBtn.TextColor3 = Color3.fromRGB(255,255,255)
+disengageBtn.Font = Enum.Font.GothamBold
+disengageBtn.TextSize = 14
+disengageBtn.Parent = mainFrame
+Instance.new("UICorner", disengageBtn).CornerRadius = UDim.new(0, 8)
+
+local selectAllBtn = Instance.new("TextButton")
+selectAllBtn.Position = UDim2.new(0, 10, 0, 420)
+selectAllBtn.Size = UDim2.new(0.48, -5, 0, 28)
+selectAllBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+selectAllBtn.Text = "SELECT ALL"
+selectAllBtn.TextColor3 = Color3.fromRGB(220,220,220)
+selectAllBtn.Font = Enum.Font.Gotham
+selectAllBtn.TextSize = 11
+selectAllBtn.Parent = mainFrame
+Instance.new("UICorner", selectAllBtn).CornerRadius = UDim.new(0, 6)
+
+local deselectAllBtn = Instance.new("TextButton")
+deselectAllBtn.Position = UDim2.new(0.52, 5, 0, 420)
+deselectAllBtn.Size = UDim2.new(0.48, -5, 0, 28)
+deselectAllBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+deselectAllBtn.Text = "DESELECT ALL"
+deselectAllBtn.TextColor3 = Color3.fromRGB(220,220,220)
+deselectAllBtn.Font = Enum.Font.Gotham
+deselectAllBtn.TextSize = 11
+deselectAllBtn.Parent = mainFrame
+Instance.new("UICorner", deselectAllBtn).CornerRadius = UDim.new(0, 6)
+
+-- Data
+local selected = {}
+local checkmarks = {}
+local active = false
+local savedPos = nil
+
+-- Core fling function
+local function hyperFling(target)
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local root = hum and hum.RootPart
+    local tChar = target.Character
+    if not tChar then return end
+    local tHum = tChar:FindFirstChildOfClass("Humanoid")
+    local tRoot = tHum and tHum.RootPart
+    local tHead = tChar:FindFirstChild("Head")
+    if not char or not hum or not root then return end
+    if root.Velocity.Magnitude < 50 then
+        savedPos = root.CFrame
+    end
+    if tHead then
+        workspace.CurrentCamera.CameraSubject = tHead
+    elseif tRoot then
+        workspace.CurrentCamera.CameraSubject = tRoot
+    end
+    local function push(base, x, y, z, rotX, rotY, rotZ)
+        root.CFrame = CFrame.new(base.Position) * CFrame.new(x, y, z)
+        char:SetPrimaryPartCFrame(CFrame.new(base.Position) * CFrame.new(x, y, z))
+        if tHum then
+            tHum.PlatformStand = true
+            tHum.Sit = false
+            if tRoot then tRoot.Velocity = Vector3.new(0,0,0) end
+        end
+        root.Velocity = Vector3.new(9e9, 9e9, 9e9)
+        root.RotVelocity = Vector3.new(9e9, 9e9, 9e9)
+    end
+    local function cycle(base)
+        local start = tick()
+        local step = 0
+        repeat
+            if root and tHum then
+                step = step + 180
+                push(base, 0, 1.8, 0, math.rad(step), 0, 0)
+                task.wait()
+                push(base, 0, -1.8, 0, math.rad(step), 0, 0)
+                task.wait()
+                push(base, 0, 1.8, (tHum.WalkSpeed or 16)/2, math.rad(step), 0, 0)
+                task.wait()
+                push(base, 0, -1.8, -(tHum.WalkSpeed or 16)/2, math.rad(step), 0, 0)
+                task.wait()
+            end
+        until start + 2.5 < tick() or not active
+    end
+    local oldFall = workspace.FallenPartsDestroyHeight
+    workspace.FallenPartsDestroyHeight = 0/0
+    local bv = Instance.new("BodyVelocity")
+    bv.Parent = root
+    bv.Velocity = Vector3.new(0,0,0)
+    bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+    if tRoot then
+        cycle(tRoot)
+        if root and root.Velocity.Magnitude < 1e7 then cycle(tRoot) end
+    elseif tHead then
+        cycle(tHead)
+        if root and root.Velocity.Magnitude < 1e7 then cycle(tHead) end
+    end
+    bv:Destroy()
+    if tHum then tHum.PlatformStand = false end
+    hum:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+    workspace.CurrentCamera.CameraSubject = hum
+    workspace.FallenPartsDestroyHeight = oldFall
+    if savedPos then
+        repeat
+            root.CFrame = savedPos * CFrame.new(0,0.5,0)
+            char:SetPrimaryPartCFrame(savedPos * CFrame.new(0,0.5,0))
+            hum:ChangeState("GettingUp")
+            for _, p in pairs(char:GetChildren()) do
+                if p:IsA("BasePart") then
+                    p.Velocity, p.RotVelocity = Vector3.new(), Vector3.new()
+                end
+            end
+            task.wait()
+        until (root.Position - savedPos.p).Magnitude < 25
+    end
+end
+
+-- GUI list update
+local function updateList()
+    for _, v in pairs(playerScroll:GetChildren()) do if v:IsA("Frame") then v:Destroy() end end
+    checkmarks = {}
+    local y = 5
+    local sorted = {}
+    for _, plr in pairs(Players:GetPlayers()) do table.insert(sorted, plr) end
+    table.sort(sorted, function(a,b) return a.Name:lower() < b.Name:lower() end)
+    for _, plr in pairs(sorted) do
+        if plr ~= LocalPlayer then
+            local row = Instance.new("Frame")
+            row.Size = UDim2.new(1, -10, 0, 32)
+            row.Position = UDim2.new(0, 5, 0, y)
+            row.BackgroundColor3 = Color3.fromRGB(25, 28, 42)
+            row.BackgroundTransparency = 0.4
+            row.Parent = playerScroll
+            Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+            local box = Instance.new("Frame")
+            box.Size = UDim2.new(0, 20, 0, 20)
+            box.Position = UDim2.new(0, 8, 0.5, -10)
+            box.BackgroundColor3 = Color3.fromRGB(40, 44, 60)
+            box.Parent = row
+            Instance.new("UICorner", box).CornerRadius = UDim.new(0, 4)
+            local mark = Instance.new("TextLabel")
+            mark.Size = UDim2.new(1, 0, 1, 0)
+            mark.BackgroundTransparency = 1
+            mark.Text = "●"
+            mark.TextColor3 = Color3.fromRGB(0, 255, 80)
+            mark.TextSize = 14
+            mark.Visible = selected[plr.Name] ~= nil
+            mark.Parent = box
+            local name = Instance.new("TextLabel")
+            name.Size = UDim2.new(1, -45, 1, 0)
+            name.Position = UDim2.new(0, 38, 0, 0)
+            name.BackgroundTransparency = 1
+            name.Text = plr.Name
+            name.TextColor3 = Color3.fromRGB(220,220,220)
+            name.Font = Enum.Font.Gotham
+            name.TextSize = 12
+            name.TextXAlignment = Enum.TextXAlignment.Left
+            name.Parent = row
+            local click = Instance.new("TextButton")
+            click.Size = UDim2.new(1, 0, 1, 0)
+            click.BackgroundTransparency = 1
+            click.Text = ""
+            click.Parent = row
+            click.MouseButton1Click:Connect(function()
+                if selected[plr.Name] then
+                    selected[plr.Name] = nil
+                    mark.Visible = false
+                else
+                    selected[plr.Name] = plr
+                    mark.Visible = true
+                end
+                local cnt = 0 for _ in pairs(selected) do cnt = cnt + 1 end
+                statusLabel.Text = (active and "🔴 ACTIVE" or "🟢 STANDBY") .. " | TARGETS: " .. cnt
+            end)
+            checkmarks[plr.Name] = mark
+            y = y + 38
+        end
+    end
+    playerScroll.CanvasSize = UDim2.new(0, 0, 0, y + 10)
+end
+
+local function selectAll(select)
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and checkmarks[plr.Name] then
+            if select then
+                selected[plr.Name] = plr
+                checkmarks[plr.Name].Visible = true
+            else
+                selected[plr.Name] = nil
+                checkmarks[plr.Name].Visible = false
+            end
+        end
+    end
+    local cnt = 0 for _ in pairs(selected) do cnt = cnt + 1 end
+    statusLabel.Text = (active and "🔴 ACTIVE" or "🟢 STANDBY") .. " | TARGETS: " .. cnt
+end
+
+-- Start/Stop
+local function startFling()
+    if active then return end
+    local cnt = 0 for _ in pairs(selected) do cnt = cnt + 1 end
+    if cnt == 0 then
+        statusLabel.Text = "⚠️ NO TARGETS SELECTED"
+        task.wait(1)
+        local cnt2 = 0 for _ in pairs(selected) do cnt2 = cnt2 + 1 end
+        statusLabel.Text = (active and "🔴 ACTIVE" or "🟢 STANDBY") .. " | TARGETS: " .. cnt2
+        return
+    end
+    active = true
+    statusLabel.Text = "🔴 ACTIVE | TARGETS: " .. cnt
+    spawn(function()
+        while active do
+            local valid = {}
+            for name, plr in pairs(selected) do
+                if plr and plr.Parent then valid[name] = plr else selected[name] = nil end
+            end
+            for _, plr in pairs(valid) do
+                if active then
+                    hyperFling(plr)
+                    task.wait()
+                end
+            end
+            local cntNow = 0 for _ in pairs(selected) do cntNow = cntNow + 1 end
+            statusLabel.Text = "🔴 ACTIVE | TARGETS: " .. cntNow
+            task.wait(0.1)
+        end
+    end)
+end
+
+local function stopFling()
+    active = false
+    local cnt = 0 for _ in pairs(selected) do cnt = cnt + 1 end
+    statusLabel.Text = "🟢 STANDBY | TARGETS: " .. cnt
+end
+
+engageBtn.MouseButton1Click:Connect(startFling)
+disengageBtn.MouseButton1Click:Connect(stopFling)
+selectAllBtn.MouseButton1Click:Connect(function() selectAll(true) end)
+deselectAllBtn.MouseButton1Click:Connect(function() selectAll(false) end)
+
+Players.PlayerAdded:Connect(updateList)
+Players.PlayerRemoving:Connect(function(plr)
+    if selected[plr.Name] then selected[plr.Name] = nil end
+    updateList()
+    local cnt = 0 for _ in pairs(selected) do cnt = cnt + 1 end
+    statusLabel.Text = (active and "🔴 ACTIVE" or "🟢 STANDBY") .. " | TARGETS: " .. cnt
+end)
+
+makeWindowDraggableAndResizable(mainFrame, titleBar, resizeHandle)
+updateList()
